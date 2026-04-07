@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { FinanceState, FinanceContextType, Envelope, Transaction } from './types';
+import { FinanceState, FinanceContextType, Envelope, Transaction, RecurringTransaction, RecurrenceType } from './types';
 import { storage } from './storage';
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -16,7 +16,10 @@ type Action =
   | { type: 'DELETE_ENVELOPE'; payload: string }
   | { type: 'ADD_TRANSACTION'; payload: Transaction }
   | { type: 'UPDATE_TRANSACTION'; payload: Transaction }
-  | { type: 'DELETE_TRANSACTION'; payload: string };
+  | { type: 'DELETE_TRANSACTION'; payload: string }
+  | { type: 'ADD_RECURRING'; payload: RecurringTransaction }
+  | { type: 'UPDATE_RECURRING'; payload: RecurringTransaction }
+  | { type: 'DELETE_RECURRING'; payload: string };
 
 function financeReducer(state: FinanceState, action: Action): FinanceState {
   switch (action.type) {
@@ -41,9 +44,11 @@ function financeReducer(state: FinanceState, action: Action): FinanceState {
       return {
         ...state,
         envelopes: state.envelopes.filter((e) => e.id !== action.payload),
-        // Also delete all transactions for this envelope
         transactions: state.transactions.filter(
           (t) => t.envelopeId !== action.payload
+        ),
+        recurringTransactions: state.recurringTransactions.filter(
+          (r) => r.envelopeId !== action.payload
         ),
       };
 
@@ -65,6 +70,28 @@ function financeReducer(state: FinanceState, action: Action): FinanceState {
       return {
         ...state,
         transactions: state.transactions.filter((t) => t.id !== action.payload),
+      };
+
+    case 'ADD_RECURRING':
+      return {
+        ...state,
+        recurringTransactions: [...state.recurringTransactions, action.payload],
+      };
+
+    case 'UPDATE_RECURRING':
+      return {
+        ...state,
+        recurringTransactions: state.recurringTransactions.map((r) =>
+          r.id === action.payload.id ? action.payload : r
+        ),
+      };
+
+    case 'DELETE_RECURRING':
+      return {
+        ...state,
+        recurringTransactions: state.recurringTransactions.filter(
+          (r) => r.id !== action.payload
+        ),
       };
 
     default:
@@ -114,25 +141,31 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     state,
 
     // Envelope actions
-    addEnvelope: (name: string, budget: number) => {
+    addEnvelope: (name: string, budget: number, openingBalance = 0, goal = 0) => {
       const envelope: Envelope = {
         id: generateId(),
         name,
         budget,
         spent: 0,
+        openingBalance,
+        goal,
+        alertThreshold: 80,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
       dispatch({ type: 'ADD_ENVELOPE', payload: envelope });
     },
 
-    updateEnvelope: (id: string, name: string, budget: number) => {
+    updateEnvelope: (id: string, name: string, budget: number, openingBalance = 0, goal = 0, alertThreshold = 80) => {
       const existing = state.envelopes.find((e) => e.id === id);
       if (existing) {
         const updated: Envelope = {
           ...existing,
           name,
           budget,
+          openingBalance,
+          goal,
+          alertThreshold,
           updatedAt: Date.now(),
         };
         dispatch({ type: 'UPDATE_ENVELOPE', payload: updated });
@@ -147,14 +180,42 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       return state.envelopes.find((e) => e.id === id);
     },
 
+    adjustEnvelopeBalance: (id: string, amount: number, reason: string) => {
+      const existing = state.envelopes.find((e) => e.id === id);
+      if (existing) {
+        // Create a transaction to track the adjustment
+        const transaction: Transaction = {
+          id: generateId(),
+          amount: Math.abs(amount),
+          envelopeId: id,
+          date: Date.now(),
+          notes: `Balance adjustment: ${reason}`,
+          isRecurring: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+
+        // Update envelope spent
+        const newSpent = existing.spent + Math.abs(amount);
+        const updated: Envelope = {
+          ...existing,
+          spent: newSpent,
+          updatedAt: Date.now(),
+        };
+        dispatch({ type: 'UPDATE_ENVELOPE', payload: updated });
+      }
+    },
+
     // Transaction actions
-    addTransaction: (amount: number, envelopeId: string, date: number, notes: string) => {
+    addTransaction: (amount: number, envelopeId: string, date: number, notes: string, isRecurring = false) => {
       const transaction: Transaction = {
         id: generateId(),
         amount,
         envelopeId,
         date,
         notes,
+        isRecurring,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -188,7 +249,6 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
         // Recalculate spent for both old and new envelope
         if (existing.envelopeId !== envelopeId) {
-          // Moved to different envelope
           const oldEnvelope = state.envelopes.find((e) => e.id === existing.envelopeId);
           if (oldEnvelope) {
             const oldSpent = recalculateEnvelopeSpent(existing.envelopeId) - existing.amount;
@@ -250,6 +310,86 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       });
     },
 
+    // Recurring transactions
+    addRecurringTransaction: (amount: number, envelopeId: string, recurrenceType: RecurrenceType, notes: string) => {
+      const recurring: RecurringTransaction = {
+        id: generateId(),
+        amount,
+        envelopeId,
+        recurrenceType,
+        notes,
+        isActive: true,
+        lastExecuted: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      dispatch({ type: 'ADD_RECURRING', payload: recurring });
+    },
+
+    updateRecurringTransaction: (id: string, amount: number, envelopeId: string, recurrenceType: RecurrenceType, notes: string) => {
+      const existing = state.recurringTransactions.find((r) => r.id === id);
+      if (existing) {
+        const updated: RecurringTransaction = {
+          ...existing,
+          amount,
+          envelopeId,
+          recurrenceType,
+          notes,
+          updatedAt: Date.now(),
+        };
+        dispatch({ type: 'UPDATE_RECURRING', payload: updated });
+      }
+    },
+
+    deleteRecurringTransaction: (id: string) => {
+      dispatch({ type: 'DELETE_RECURRING', payload: id });
+    },
+
+    getRecurringTransactions: () => {
+      return state.recurringTransactions;
+    },
+
+    processRecurringTransactions: () => {
+      // Auto-generate transactions based on recurrence rules
+      const now = Date.now();
+      state.recurringTransactions.forEach((recurring) => {
+        if (!recurring.isActive) return;
+
+        const lastExecuted = new Date(recurring.lastExecuted);
+        const today = new Date(now);
+
+        let shouldExecute = false;
+
+        switch (recurring.recurrenceType) {
+          case 'daily':
+            shouldExecute = lastExecuted.getDate() !== today.getDate();
+            break;
+          case 'weekly':
+            shouldExecute = Math.floor((now - recurring.lastExecuted) / (7 * 24 * 60 * 60 * 1000)) >= 1;
+            break;
+          case 'monthly':
+            shouldExecute = lastExecuted.getMonth() !== today.getMonth();
+            break;
+          case 'yearly':
+            shouldExecute = lastExecuted.getFullYear() !== today.getFullYear();
+            break;
+        }
+
+        if (shouldExecute && recurring.lastExecuted > 0) {
+          // Auto-create transaction
+          value.addTransaction(recurring.amount, recurring.envelopeId, now, recurring.notes, true);
+
+          // Update lastExecuted
+          const updated: RecurringTransaction = {
+            ...recurring,
+            lastExecuted: now,
+            updatedAt: Date.now(),
+          };
+          dispatch({ type: 'UPDATE_RECURRING', payload: updated });
+        }
+      });
+    },
+
     // Stats
     getTotalSpent: () => {
       return state.transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -278,6 +418,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         result[key] = (result[key] || 0) + t.amount;
       });
       return result;
+    },
+
+    getEnvelopesNearAlert: () => {
+      return state.envelopes.filter((envelope) => {
+        const percentageUsed = envelope.budget > 0 ? (envelope.spent / envelope.budget) * 100 : 0;
+        return percentageUsed >= envelope.alertThreshold;
+      });
     },
   };
 

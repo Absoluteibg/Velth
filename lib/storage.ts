@@ -54,6 +54,7 @@ export const storage = {
     return {
       envelopes: [],
       transactions: [],
+      recurringTransactions: [],
     };
   },
 };

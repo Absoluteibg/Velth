@@ -54,3 +54,47 @@
 ## Bug Fixes & Improvements
 (To be added as issues are discovered)
 
+
+
+## Enhancement Phase 2: Advanced Features
+
+### Phase 1: Enhanced Data Types
+- [x] Add recurring transaction types (daily, weekly, monthly, yearly)
+- [x] Add budget alert thresholds to Envelope
+- [x] Add goal and opening balance to Envelope
+- [x] Add transaction history tracking
+
+### Phase 2: Enhanced Envelope Module
+- [x] Add opening balance field to envelopes
+- [x] Add savings goal field to envelopes
+- [x] Implement add/reduce amount functionality
+- [x] Show goal progress indicator
+- [x] Display opening balance info
+
+### Phase 3: Recurring Transactions
+- [x] Create recurring transaction types and interfaces
+- [x] Implement recurring transaction creation
+- [x] Auto-generate transactions based on recurrence
+- [x] Manage recurring transaction list
+- [x] Edit/delete recurring transactions
+
+### Phase 4: Budget Alerts
+- [x] Add alert threshold settings per envelope
+- [x] Implement alert notification system
+- [x] Show alert status in UI
+- [x] Configure alert percentages (e.g., 80%, 100%)
+
+### Phase 5: Export Functionality
+- [ ] Implement CSV export for transactions
+- [ ] Implement PDF export for reports
+- [ ] Add date range filtering for exports
+- [ ] Create export UI in Reports screen
+
+### Phase 6: Theme & Premium UI
+- [x] Force light theme globally
+- [x] Increase tab bar spacing and padding
+- [x] Apply premium styling (shadows, rounded corners, better spacing)
+- [x] Enhance card designs with premium look
+- [x] Improve typography hierarchy
+- [x] Add subtle gradients and depth effects
+

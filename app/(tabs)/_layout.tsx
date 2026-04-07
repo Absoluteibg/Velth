@@ -9,8 +9,8 @@ import { useColors } from "@/hooks/use-colors";
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomPadding;
+  const bottomPadding = Platform.OS === "web" ? 16 : Math.max(insets.bottom, 12);
+  const tabBarHeight = 70 + bottomPadding;
 
   return (
     <Tabs
@@ -20,12 +20,18 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          paddingTop: 8,
+          paddingTop: 12,
           paddingBottom: bottomPadding,
+          paddingHorizontal: 12,
           height: tabBarHeight,
           backgroundColor: colors.background,
           borderTopColor: colors.border,
-          borderTopWidth: 0.5,
+          borderTopWidth: 1,
+          shadowColor: colors.foreground,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 4,
         },
       }}
     >
@@ -33,21 +39,24 @@ export default function TabLayout() {
         name="envelopes"
         options={{
           title: "Envelopes",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="envelope.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="envelope.fill" color={color} />,
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
         }}
       />
       <Tabs.Screen
         name="cashbook"
         options={{
           title: "Cashbook",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="book.fill" color={color} />,
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
           title: "Reports",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="chart.bar.fill" color={color} />,
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
         }}
       />
     </Tabs>
