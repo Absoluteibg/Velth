@@ -4,7 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FinanceState } from './types';
+import { FinanceState, UserProfile, AppSettings } from './types';
 
 const STORAGE_KEY = 'velth_finance_data';
 
@@ -51,7 +51,26 @@ export const storage = {
    * Get initial state (empty if no data exists)
    */
   getInitialState(): FinanceState {
+    const defaultProfile: UserProfile = {
+      id: 'user_' + Date.now(),
+      name: 'User',
+      email: '',
+      currency: 'INR',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    const defaultSettings: AppSettings = {
+      currency: 'INR',
+      theme: 'light',
+      autoSaveEnabled: true,
+      autoSaveInterval: 5000, // 5 seconds
+      notifications: true,
+    };
+
     return {
+      userProfile: defaultProfile,
+      settings: defaultSettings,
       envelopes: [],
       transactions: [],
       recurringTransactions: [],

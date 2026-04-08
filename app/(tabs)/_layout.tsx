@@ -59,6 +59,22 @@ export default function TabLayout() {
           tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="gearshape.fill" color={color} />,
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+        }}
+      />
+      <Tabs.Screen
+        name="donate"
+        options={{
+          title: "Donate",
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="heart.fill" color={color} />,
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+        }}
+      />
     </Tabs>
   );
 }

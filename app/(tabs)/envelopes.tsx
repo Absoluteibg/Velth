@@ -19,6 +19,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useFinance } from '@/lib/finance-context';
 import { useColors } from '@/hooks/use-colors';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/currency';
 
 interface CreateEnvelopeModalState {
   visible: boolean;
@@ -39,6 +40,7 @@ interface AdjustBalanceModalState {
 export default function EnvelopesScreen() {
   const { state, addEnvelope, deleteEnvelope, updateEnvelope, adjustEnvelopeBalance } = useFinance();
   const colors = useColors();
+  const currency = state.settings.currency;
   const [modal, setModal] = useState<CreateEnvelopeModalState>({
     visible: false,
     name: '',
@@ -196,8 +198,8 @@ export default function EnvelopesScreen() {
         {item.openingBalance > 0 && (
           <View className="mb-3 pb-3 border-b" style={{ borderColor: colors.border }}>
             <Text className="text-xs text-muted mb-1">Opening Balance</Text>
-            <Text className="text-sm font-semibold text-success">
-              ₹{item.openingBalance.toFixed(2)}
+                      <Text className="text-sm text-success">
+              {formatCurrency(item.openingBalance, currency)}
             </Text>
           </View>
         )}
@@ -207,13 +209,13 @@ export default function EnvelopesScreen() {
           <View className="flex-row justify-between mb-2">
             <Text className="text-sm font-medium text-muted">Budget Allocation</Text>
             <Text className="text-sm font-bold text-foreground">
-              ₹{item.budget.toFixed(2)}
+              {formatCurrency(item.budget, currency)}
             </Text>
           </View>
           <View className="flex-row justify-between mb-2">
             <Text className="text-xs text-muted">Spent</Text>
             <Text className={cn('text-xs font-semibold', isOverBudget ? 'text-error' : 'text-warning')}>
-              ₹{item.spent.toFixed(2)}
+              {formatCurrency(item.spent, currency)}
             </Text>
           </View>
 
@@ -236,7 +238,7 @@ export default function EnvelopesScreen() {
               {percentageUsed.toFixed(0)}% used
             </Text>
             <Text className={cn('text-xs font-semibold', isOverBudget ? 'text-error' : 'text-success')}>
-              {isOverBudget ? `Over by ₹${(item.spent - item.budget).toFixed(2)}` : `₹${remaining.toFixed(2)} left`}
+              {isOverBudget ? `Over by ${formatCurrency(item.spent - item.budget, currency)}` : `${formatCurrency(remaining, currency)} left`}
             </Text>
           </View>
         </View>
@@ -247,7 +249,7 @@ export default function EnvelopesScreen() {
             <View className="flex-row justify-between mb-2">
               <Text className="text-sm font-medium text-muted">Savings Goal</Text>
               <Text className="text-sm font-bold text-foreground">
-                ₹{item.goal.toFixed(2)}
+                {formatCurrency(item.goal, currency)}
               </Text>
             </View>
 
@@ -270,7 +272,7 @@ export default function EnvelopesScreen() {
                 {goalProgress.toFixed(0)}% towards goal
               </Text>
               <Text className="text-xs font-semibold text-success">
-                ₹{Math.max(0, item.goal - item.spent).toFixed(2)} to go
+                {formatCurrency(Math.max(0, item.goal - item.spent), currency)} to go
               </Text>
             </View>
           </View>
@@ -318,7 +320,7 @@ export default function EnvelopesScreen() {
           >
             <Text className="text-xs text-muted mb-1 font-medium">Total Budget</Text>
             <Text className="text-2xl font-bold text-foreground">
-              ₹{totalBudget.toFixed(2)}
+              {formatCurrency(totalBudget, currency)}
             </Text>
           </View>
 
@@ -335,10 +337,9 @@ export default function EnvelopesScreen() {
               }}
             >
               <Text className="text-xs text-muted mb-1 font-medium">Total Spent</Text>
-              <Text className="text-xl font-bold text-warning">
-                ₹{totalSpent.toFixed(2)}
-              </Text>
-            </View>
+              <Text className="text-2xl font-bold text-warning">
+                {formatCurrency(totalSpent, currency)}
+              </Text>            </View>
             <View
               className="flex-1 bg-surface rounded-2xl p-4 border border-border shadow-md"
               style={{
@@ -350,9 +351,8 @@ export default function EnvelopesScreen() {
                 elevation: 2,
               }}
             >
-              <Text className="text-xs text-muted mb-1 font-medium">Remaining</Text>
-              <Text className="text-xl font-bold text-success">
-                ₹{Math.max(0, totalBudget - totalSpent).toFixed(2)}
+              <Text className="text-xs text-muted mb-1 font-medium">Remaining</Text>              <Text className="text-2xl font-bold text-success">
+                {formatCurrency(Math.max(0, totalBudget - totalSpent), currency)}
               </Text>
             </View>
           </View>
@@ -370,9 +370,9 @@ export default function EnvelopesScreen() {
               }}
             >
               <Text className="text-xs text-muted mb-1 font-medium">Total Savings Goal</Text>
-              <Text className="text-2xl font-bold text-success">
-                ₹{totalGoal.toFixed(2)}
-              </Text>
+            <Text className="text-2xl font-bold text-success">
+              {formatCurrency(totalGoal, currency)}
+            </Text>
             </View>
           )}
         </View>

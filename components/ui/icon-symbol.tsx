@@ -21,6 +21,8 @@ const MAPPING = {
   "envelope.fill": "mail",
   "book.fill": "library-books",
   "chart.bar.fill": "bar-chart",
+  "gearshape.fill": "settings",
+  "heart.fill": "favorite",
 } as IconMapping;
 
 /**

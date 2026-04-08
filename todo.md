@@ -98,3 +98,53 @@
 - [x] Improve typography hierarchy
 - [x] Add subtle gradients and depth effects
 
+
+
+## Enhancement Phase 3: Advanced Features (Phase 2)
+
+### Feature 1: CSV/PDF Export
+- [x] Implement CSV export for transactions
+- [x] Implement PDF export for reports
+- [x] Add export buttons to Reports screen
+- [x] Handle date range filtering for exports
+
+### Feature 2: Data Backup & Restore
+- [x] Create backup/restore functionality
+- [x] Implement JSON export for all data
+- [x] Implement JSON import to restore data
+- [x] Add backup to cloud storage option
+- [x] Create restore UI in Settings
+
+### Feature 3: Category-wise Budget Limits
+- [x] Add spending cap per envelope
+- [x] Implement visual warnings for limits
+- [x] Add detailed analytics per category
+- [x] Show limit progress in envelope cards
+
+### Feature 4: Settings Tab
+- [x] Create Settings screen component
+- [x] Add user profile management
+- [x] Add theme/appearance options
+- [x] Add currency selection
+- [x] Add data management (delete all, export, import)
+- [x] Add about/help section
+
+### Feature 5: Multi-Currency Support
+- [x] Add currency type to AppState
+- [x] Implement currency selector
+- [x] Update all displays to show selected currency
+- [x] Store currency preference in AsyncStorage
+- [x] Add currency symbols throughout app
+
+### Feature 6: Auto-Save Functionality
+- [x] Implement auto-save for envelope changes
+- [x] Implement auto-save for transaction entries
+- [x] Add save indicators to UI
+- [x] Prevent data loss on app close
+
+### Feature 7: Donate Tab
+- [x] Create Donate screen component
+- [x] Add developer notes/about section
+- [x] Add donation payment options
+- [x] Integrate payment gateway (UPI/PayPal)
+- [x] Show donation success message

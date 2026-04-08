@@ -4,13 +4,15 @@
  */
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { FinanceState, FinanceContextType, Envelope, Transaction, RecurringTransaction, RecurrenceType } from './types';
+import { FinanceState, FinanceContextType, Envelope, Transaction, RecurringTransaction, RecurrenceType, UserProfile, AppSettings } from './types';
 import { storage } from './storage';
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 type Action =
   | { type: 'INIT'; payload: FinanceState }
+  | { type: 'SET_USER_PROFILE'; payload: UserProfile }
+  | { type: 'UPDATE_SETTINGS'; payload: AppSettings }
   | { type: 'ADD_ENVELOPE'; payload: Envelope }
   | { type: 'UPDATE_ENVELOPE'; payload: Envelope }
   | { type: 'DELETE_ENVELOPE'; payload: string }
@@ -19,12 +21,25 @@ type Action =
   | { type: 'DELETE_TRANSACTION'; payload: string }
   | { type: 'ADD_RECURRING'; payload: RecurringTransaction }
   | { type: 'UPDATE_RECURRING'; payload: RecurringTransaction }
-  | { type: 'DELETE_RECURRING'; payload: string };
+  | { type: 'DELETE_RECURRING'; payload: string }
+  | { type: 'RESET_STATE'; payload: FinanceState };
 
 function financeReducer(state: FinanceState, action: Action): FinanceState {
   switch (action.type) {
     case 'INIT':
       return action.payload;
+
+    case 'SET_USER_PROFILE':
+      return {
+        ...state,
+        userProfile: action.payload,
+      };
+
+    case 'UPDATE_SETTINGS':
+      return {
+        ...state,
+        settings: action.payload,
+      };
 
     case 'ADD_ENVELOPE':
       return {
@@ -94,6 +109,9 @@ function financeReducer(state: FinanceState, action: Action): FinanceState {
         ),
       };
 
+    case 'RESET_STATE':
+      return action.payload;
+
     default:
       return state;
   }
@@ -140,6 +158,49 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const value: FinanceContextType = {
     state,
 
+    // User Profile
+    setUserProfile: (profile: Partial<UserProfile>) => {
+      const updated: UserProfile = {
+        ...state.userProfile,
+        ...profile,
+        updatedAt: Date.now(),
+      };
+      dispatch({ type: 'SET_USER_PROFILE', payload: updated });
+    },
+
+    getUserProfile: () => {
+      return state.userProfile;
+    },
+
+    // Settings
+    updateSettings: (settings: Partial<AppSettings>) => {
+      const updated: AppSettings = {
+        ...state.settings,
+        ...settings,
+      };
+      dispatch({ type: 'UPDATE_SETTINGS', payload: updated });
+    },
+
+    getSettings: () => {
+      return state.settings;
+    },
+
+    setCurrency: (currency) => {
+      const updated: AppSettings = {
+        ...state.settings,
+        currency,
+      };
+      dispatch({ type: 'UPDATE_SETTINGS', payload: updated });
+
+      // Also update user profile currency
+      const updatedProfile: UserProfile = {
+        ...state.userProfile,
+        currency,
+        updatedAt: Date.now(),
+      };
+      dispatch({ type: 'SET_USER_PROFILE', payload: updatedProfile });
+    },
+
     // Envelope actions
     addEnvelope: (name: string, budget: number, openingBalance = 0, goal = 0) => {
       const envelope: Envelope = {
@@ -156,7 +217,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'ADD_ENVELOPE', payload: envelope });
     },
 
-    updateEnvelope: (id: string, name: string, budget: number, openingBalance = 0, goal = 0, alertThreshold = 80) => {
+    updateEnvelope: (id: string, name: string, budget: number, openingBalance = 0, goal = 0, alertThreshold = 80, spendingCap = 0) => {
       const existing = state.envelopes.find((e) => e.id === id);
       if (existing) {
         const updated: Envelope = {
@@ -166,6 +227,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           openingBalance,
           goal,
           alertThreshold,
+          spendingCap: spendingCap > 0 ? spendingCap : undefined,
           updatedAt: Date.now(),
         };
         dispatch({ type: 'UPDATE_ENVELOPE', payload: updated });
@@ -390,6 +452,31 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       });
     },
 
+    // Backup & Restore
+    exportDataAsJSON: () => {
+      return JSON.stringify(state, null, 2);
+    },
+
+    importDataFromJSON: (jsonData: string) => {
+      try {
+        const importedState = JSON.parse(jsonData) as FinanceState;
+        // Validate structure
+        if (importedState.userProfile && importedState.settings && Array.isArray(importedState.envelopes)) {
+          dispatch({ type: 'RESET_STATE', payload: importedState });
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('Error importing data:', error);
+        return false;
+      }
+    },
+
+    deleteAllData: () => {
+      const initialState = storage.getInitialState();
+      dispatch({ type: 'RESET_STATE', payload: initialState });
+    },
+
     // Stats
     getTotalSpent: () => {
       return state.transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -424,6 +511,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       return state.envelopes.filter((envelope) => {
         const percentageUsed = envelope.budget > 0 ? (envelope.spent / envelope.budget) * 100 : 0;
         return percentageUsed >= envelope.alertThreshold;
+      });
+    },
+
+    getEnvelopesNearLimit: () => {
+      return state.envelopes.filter((envelope) => {
+        if (!envelope.spendingCap || envelope.spendingCap === 0) return false;
+        return envelope.spent >= envelope.spendingCap * 0.8; // Alert at 80% of spending cap
       });
     },
   };
