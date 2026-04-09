@@ -20,6 +20,8 @@ import { useFinance } from '@/lib/finance-context';
 import { useColors } from '@/hooks/use-colors';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/currency';
+import { validateEnvelopeForm } from '@/lib/validators';
+import { VelthErrorHandler } from '@/lib/error-handler';
 
 interface CreateEnvelopeModalState {
   visible: boolean;
@@ -58,19 +60,24 @@ export default function EnvelopesScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleCreateEnvelope = () => {
-    if (!modal.name.trim() || !modal.budget.trim()) {
-      Alert.alert('Error', 'Please fill in required fields (Name and Budget)');
+    // Validate all fields
+    const validation = validateEnvelopeForm(
+      modal.name,
+      modal.budget,
+      modal.openingBalance,
+      modal.goal,
+      modal.alertThreshold
+    );
+
+    if (!validation.valid) {
+      const errorMessages = Object.values(validation.errors).join('\n');
+      Alert.alert('Validation Error', errorMessages);
       return;
     }
 
     const budgetAmount = parseFloat(modal.budget);
     const openingBalance = parseFloat(modal.openingBalance) || 0;
     const goal = parseFloat(modal.goal) || 0;
-
-    if (isNaN(budgetAmount) || budgetAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid budget amount');
-      return;
-    }
 
     if (editingId) {
       const alertThreshold = parseFloat(modal.alertThreshold) || 80;

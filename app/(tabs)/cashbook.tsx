@@ -21,6 +21,8 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useFinance } from '@/lib/finance-context';
 import { useColors } from '@/hooks/use-colors';
 import { cn } from '@/lib/utils';
+import { validateTransactionForm } from '@/lib/validators';
+import { formatCurrency } from '@/lib/currency';
 
 interface TransactionModalState {
   visible: boolean;
@@ -45,8 +47,18 @@ export default function CashbookScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleCreateTransaction = () => {
-    if (!modal.amount.trim() || !modal.envelopeId) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    // Validate all fields
+    const validation = validateTransactionForm(
+      modal.amount,
+      modal.envelopeId,
+      modal.date.getTime(),
+      modal.notes,
+      state.envelopes
+    );
+
+    if (!validation.valid) {
+      const errorMessages = Object.values(validation.errors).join('\n');
+      Alert.alert('Validation Error', errorMessages);
       return;
     }
 
